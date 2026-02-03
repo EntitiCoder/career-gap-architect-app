@@ -9,7 +9,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
-// Database connection
 const pool = new Pool({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
@@ -18,7 +17,6 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD || 'postgres',
 });
 
-// Cache for gap analysis results
 interface CacheEntry {
     result: any;
     timestamp: number;
