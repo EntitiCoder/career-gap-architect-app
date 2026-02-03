@@ -1,17 +1,30 @@
-# Career Gap Architect - Monorepo
+# Career Gap Architect
 
-A full-stack monorepo boilerplate with Next.js, Express, and PostgreSQL.
+AI-powered career gap analysis tool that compares resumes to job descriptions and provides actionable insights.
 
-## 🚀 One Command to Run
+## 🚀 Quick Start
 
 ```bash
+git clone https://github.com/EntitiCoder/career-gap-architect-app
+cd career-gap-architect-app
+cp .env.example .env
+```
+
+Edit `.env` and add your OpenRouter API key:
+```
+OPENROUTER_API_KEY=your_key_here
+```
+
+Install dependencies and start:
+```bash
+npm install
+cd apps/web && npm install
+cd ../api && npm install
+cd ../..
 npm run dev
 ```
 
-This single command starts:
-- **PostgreSQL** database on port 5432
-- **Express API** on port 4000
-- **Next.js Web** on port 3000
+Access at http://localhost:3000
 
 ## 📁 Project Structure
 
@@ -67,12 +80,20 @@ career-gap-architect-app/
    npm run dev
    ```
 
+## ✨ Features
+
+- AI-powered gap analysis using OpenRouter
+- Missing skills displayed as badges
+- Action plan with markdown rendering
+- Interview preparation questions
+- Intelligent caching for identical inputs
+- Input validation and error handling
+
 ## 🌐 Access the Applications
 
 - **Web App**: http://localhost:3000
 - **API**: http://localhost:4000
-- **API Health**: http://localhost:4000/health
-- **Database Health**: http://localhost:4000/db-health
+- **Gap Analysis**: POST http://localhost:4000/api/gap-analysis
 
 ## 📝 Available Scripts
 
