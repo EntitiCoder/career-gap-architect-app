@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
         const result = await extractText(new Uint8Array(buffer));
         // unpdf returns text as an array of strings (one per page)
         extractedText = Array.isArray(result.text)
-        return NextResponse.json(
-          {
-            ok: false,
-            error: `Unsupported file type: ${fileExtension}. Please upload PDF, DOCX, or TXT files.`
-          },
-          { status: 400 }
-        );
+          ? result.text.join('\n\n')
+          : String(result.text || '');
+      } else if (fileExtension === 'docx' || fileExtension === 'doc') {
+        const result = await mammoth.extractRawText({ buffer });
+        extractedText = result.value;
+      } else if (fileExtension === 'txt') {
+        extractedText = buffer.toString('utf-8');
       }
 
       // Clean up the extracted text
