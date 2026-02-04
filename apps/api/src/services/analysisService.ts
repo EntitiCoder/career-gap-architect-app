@@ -5,6 +5,7 @@
 import { ZodError } from 'zod';
 import { AnalysisResult } from '../types/analysis';
 import { AIServiceError, ParseError, TimeoutError, ValidationError } from '../utils/errors';
+import logger from '../utils/logger';
 import { formatValidationErrors, validateAnalysisResult } from '../utils/validators';
 
 interface RetryConfig {
@@ -137,7 +138,7 @@ export async function callAIService(
 
     for (const model of modelsToTry) {
         try {
-            console.log(`[AI Service] Trying model: ${model}`);
+            logger.info('[AI Service] Trying model', { model });
             const result = await callAIServiceWithModel(
                 resume,
                 jobDescription,
@@ -148,7 +149,7 @@ export async function callAIService(
             
             // Mark model as working
             markModelStatus(model, true);
-            console.log(`[AI Service] Success with model: ${model}`);
+            logger.info('[AI Service] Success with model', { model });
             
             return result;
         } catch (error) {
@@ -159,19 +160,19 @@ export async function callAIService(
             // If it's a 404 (model not found), mark as not working and try next
             if (statusCode === 404) {
                 markModelStatus(model, false);
-                console.warn(`[AI Service] Model not available: ${model}, trying next...`);
+                logger.warn('[AI Service] Model not available, trying next', { model });
                 continue;
             }
             
             // If it's another non-retryable error, mark as not working and try next
             if (error instanceof AIServiceError && !error.retryable) {
                 markModelStatus(model, false);
-                console.warn(`[AI Service] Non-retryable error with ${model}: ${error.message}, trying next...`);
+                logger.warn('[AI Service] Non-retryable error, trying next', { model, message: error.message });
                 continue;
             }
             
             // For retryable errors, continue to next model
-            console.warn(`[AI Service] Error with ${model}: ${error}, trying next...`);
+            logger.warn('[AI Service] Error with model, trying next', { model, error: String(error) });
             continue;
         }
     }
@@ -215,7 +216,13 @@ async function callAIServiceWithModel(
         }
 
         try {
-            console.log(`[AI Service] Attempt ${attempt + 1}/${config.maxAttempts} with ${model} - Resume length: ${resume.length} chars, Job description length: ${jobDescription.length} chars`);
+            logger.info('[AI Service] Attempt', {
+                attempt: attempt + 1,
+                maxAttempts: config.maxAttempts,
+                model,
+                resumeLength: resume.length,
+                jobDescLength: jobDescription.length
+            });
 
             const prompt = `Analyze the gap between this resume and job description. Return ONLY valid JSON with this exact structure:
 {
@@ -266,7 +273,10 @@ ${jobDescription}`;
                 );
 
                 if (!error.retryable) {
-                    console.error(`[AI Service] Non-retryable error (${response.status}): ${errorText}`);
+                    logger.error('[AI Service] Non-retryable error', {
+                        status: response.status,
+                        error: errorText
+                    });
                     throw error;
                 }
 
@@ -289,7 +299,7 @@ ${jobDescription}`;
             const parsed = parseAIResponse(content);
             const result = validateAndFormatResult(parsed);
 
-            console.log(`[AI Service] Success on attempt ${attempt + 1}`);
+            logger.info('[AI Service] Success on attempt', { attempt: attempt + 1 });
             return result;
 
         } catch (error) {
@@ -298,20 +308,37 @@ ${jobDescription}`;
 
             // Log the error with context
             if (error instanceof AIServiceError) {
-                console.error(`[AI Service] Attempt ${attempt + 1} failed - ${error.code}: ${error.message}`);
+                logger.error('[AI Service] Attempt failed - AIServiceError', {
+                    attempt: attempt + 1,
+                    code: error.code,
+                    message: error.message
+                });
                 
                 // Don't retry non-retryable errors
                 if (!error.retryable) {
                     throw error;
                 }
             } else if (error instanceof ParseError) {
-                console.error(`[AI Service] Attempt ${attempt + 1} failed - Parse error: ${error.message}`);
+                logger.error('[AI Service] Attempt failed - ParseError', {
+                    attempt: attempt + 1,
+                    message: error.message
+                });
             } else if (error instanceof ValidationError) {
-                console.error(`[AI Service] Attempt ${attempt + 1} failed - Validation error: ${error.message}`, error.details);
+                logger.error('[AI Service] Attempt failed - ValidationError', {
+                    attempt: attempt + 1,
+                    message: error.message,
+                    details: error.details
+                });
             } else if (error instanceof TimeoutError) {
-                console.error(`[AI Service] Attempt ${attempt + 1} failed - Timeout: ${error.message}`);
+                logger.error('[AI Service] Attempt failed - TimeoutError', {
+                    attempt: attempt + 1,
+                    message: error.message
+                });
             } else {
-                console.error(`[AI Service] Attempt ${attempt + 1} failed - ${error}`);
+                logger.error('[AI Service] Attempt failed - Unknown error', {
+                    attempt: attempt + 1,
+                    error: String(error)
+                });
             }
 
             // If this is the last attempt, throw the error
@@ -321,7 +348,7 @@ ${jobDescription}`;
 
             // Calculate backoff delay and wait before retry
             const backoffDelay = calculateBackoff(attempt, config.baseDelayMs, config.maxJitterMs);
-            console.log(`[AI Service] Retrying in ${Math.round(backoffDelay)}ms...`);
+            logger.info('[AI Service] Retrying', { delayMs: Math.round(backoffDelay) });
             await sleep(backoffDelay);
         }
     }

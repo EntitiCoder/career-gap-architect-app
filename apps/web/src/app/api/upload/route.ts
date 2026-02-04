@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
         .trim();
 
-      if (!extractedText || extractedText.length < 10) {
+      if (!extractedText || extractedText.length < MIN_TEXT_LENGTH) {
         return NextResponse.json(
           {
             ok: false,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           },
           { status: 400 }
         );
-      }MIN_TEXT_LENGTH
+      }
 
       return NextResponse.json({
         ok: true,
@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (parseError) {
-      console.error('File parsing error:', parseError);
       return NextResponse.json(
         {
           ok: false,
@@ -115,7 +114,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Upload error:', error);
     return NextResponse.json(
       { ok: false, error: 'Failed to process uploaded file' },
       { status: 500 }

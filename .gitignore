@@ -19,9 +19,8 @@ dist
 *.pem
 
 # database
-*.sql
 dump_*.sql
-migrate_db.sh
+**/backup*.sql
 
 # environment
 .env.local

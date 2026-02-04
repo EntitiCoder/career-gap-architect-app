@@ -54,6 +54,14 @@ export default function Home() {
         setLoadingFunction(true)
         setError(null)
 
+        // Validate file size (10MB limit)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024
+        if (file.size > MAX_FILE_SIZE) {
+            setError('File size exceeds 10MB limit')
+            setLoadingFunction(false)
+            return
+        }
+
         try {
             const formData = new FormData()
             formData.append('file', file)
@@ -75,7 +83,6 @@ export default function Home() {
 
         } catch (err) {
             setError('Failed to upload file. Please try again.')
-            console.error('Upload error:', err)
         } finally {
             setLoadingFunction(false)
         }

@@ -26,14 +26,14 @@ let envLoaded = false;
 for (const envPath of envPaths) {
     const result = dotenv.config({ path: envPath });
     if (result.error === undefined) {
-        console.log(`[STARTUP] Loaded .env from: ${envPath}`);
+        logger.info('[STARTUP] Loaded .env', { path: envPath });
         envLoaded = true;
         break;
     }
 }
 
 if (!envLoaded) {
-    console.warn(`[STARTUP] Warning: Could not find .env file in paths: ${envPaths.join(', ')}`);
+    logger.warn('[STARTUP] Could not find .env file', { paths: envPaths });
 }
 
 const app = express();
@@ -121,26 +121,6 @@ app.get('/db-health', async (req: Request, res: Response) => {
         });
         res.status(500).json({
             status: 'Database connection failed',
-            error: error instanceof Error ? error.message : 'Unknown error',
-        });
-    }
-});
-
-// Example API endpoint
-app.get('/api/users', async (req: Request, res: Response) => {
-    const context = requestContextMap.get(req);
-    try {
-        logRequest('GET', '/api/users', { requestId: context?.requestId });
-        logDatabase('SELECT users', 'start', { requestId: context?.requestId });
-        const result = await pool.query('SELECT * FROM users LIMIT 10');
-        logDatabase('SELECT users', 'success', { requestId: context?.requestId });
-        res.json(result.rows);
-    } catch (error) {
-        logDatabase('SELECT users', 'error', {
-            requestId: context?.requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        res.status(500).json({
             error: error instanceof Error ? error.message : 'Unknown error',
         });
     }
