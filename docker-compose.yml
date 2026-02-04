@@ -31,6 +31,7 @@ services:
       DB_NAME: ${DB_NAME:-career_gap_db}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     ports:
       - "4000:4000"
     depends_on:
