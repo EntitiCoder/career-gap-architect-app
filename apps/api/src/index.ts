@@ -12,8 +12,8 @@ import { AnalysisRequest, AnalysisResult, ErrorResponse } from './types/analysis
 import { AIServiceError, ParseError, TimeoutError, ValidationError } from './utils/errors';
 import logger, { logAICall, logCache, logDatabase, logRequest } from './utils/logger';
 import {
-    formatValidationErrors,
-    validateAnalysisRequest,
+	formatValidationErrors,
+	validateAnalysisRequest,
 } from './utils/validators';
 
 // Try multiple paths for .env file
