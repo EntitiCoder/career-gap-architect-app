@@ -40,22 +40,22 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
  */
 function getModelsToTry(preferredModel: string): string[] {
     const models = [preferredModel];
-    
+
     // Add other free models as fallback
     for (const model of FREE_MODELS) {
         if (model !== preferredModel) {
             models.push(model);
         }
     }
-    
+
     // Sort by likelihood of working (cached working models first)
     return models.sort((a, b) => {
         const aCache = modelCache.get(a);
         const bCache = modelCache.get(b);
-        
+
         const aWorking = aCache?.isWorking ?? true;
         const bWorking = bCache?.isWorking ?? true;
-        
+
         return (bWorking ? 1 : 0) - (aWorking ? 1 : 0);
     });
 }
@@ -146,31 +146,31 @@ export async function callAIService(
                 model,
                 config
             );
-            
+
             // Mark model as working
             markModelStatus(model, true);
             logger.info('[AI Service] Success with model', { model });
-            
+
             return result;
         } catch (error) {
             lastError = error as Error;
-            
+
             const statusCode = error instanceof AIServiceError ? error.statusCode : undefined;
-            
+
             // If it's a 404 (model not found), mark as not working and try next
             if (statusCode === 404) {
                 markModelStatus(model, false);
                 logger.warn('[AI Service] Model not available, trying next', { model });
                 continue;
             }
-            
+
             // If it's another non-retryable error, mark as not working and try next
             if (error instanceof AIServiceError && !error.retryable) {
                 markModelStatus(model, false);
                 logger.warn('[AI Service] Non-retryable error, trying next', { model, message: error.message });
                 continue;
             }
-            
+
             // For retryable errors, continue to next model
             logger.warn('[AI Service] Error with model, trying next', { model, error: String(error) });
             continue;
@@ -224,13 +224,26 @@ async function callAIServiceWithModel(
                 jobDescLength: jobDescription.length
             });
 
-            const prompt = `Analyze the gap between this resume and job description. Return ONLY valid JSON with this exact structure:
+            const prompt = `You are a career gap analysis expert. Analyze the gap between the resume and job description.
+            
+EXTRACT:
+1. Missing Skills: List only technical technologies present in the JD but absent in the Resume.
+2. Steps: Provide EXACTLY 3 concrete project-based steps.
+3. Questions: Provide EXACTLY 3 specific interview questions.
+
+STRICT CONSTRAINTS:
+- You MUST provide EXACTLY 3 steps and EXACTLY 3 questions. DO NOT provide 2, and DO NOT provide 4 or more.
+- Return ONLY valid JSON. No conversational text.
+- Use markdown list format within the JSON strings.
+
+JSON STRUCTURE:
 {
   "missingSkills": ["skill1", "skill2"],
-  "steps": "# Action Plan\\n- Step 1\\n- Step 2",
-  "interviewQuestions": "# Interview Prep\\n- Question 1\\n- Question 2"
+  "steps": "# Action Plan\\n- Step 1\\n- Step 2\\n- Step 3",
+  "interviewQuestions": "# Interview Prep\\n- Question 1\\n- Question 2\\n- Question 3"
 }
 
+DATA:
 Resume:
 ${resume}
 
@@ -313,7 +326,7 @@ ${jobDescription}`;
                     code: error.code,
                     message: error.message
                 });
-                
+
                 // Don't retry non-retryable errors
                 if (!error.retryable) {
                     throw error;
@@ -371,7 +384,7 @@ export function parseAIResponse(content: string): any {
     try {
         // Try to extract JSON from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
-        
+
         if (!jsonMatch) {
             throw new ParseError(
                 'No JSON found in AI response',
@@ -401,6 +414,25 @@ export function parseAIResponse(content: string): any {
 }
 
 /**
+ * Truncate a markdown list to exactly N items
+ */
+function truncateMarkdownList(text: string, count: number): string {
+    const lines = text.split('\n');
+    const headerLines: string[] = [];
+    const listItems: string[] = [];
+
+    for (const line of lines) {
+        if (line.trim().startsWith('- ') || /^\d+\./.test(line.trim())) {
+            listItems.push(line);
+        } else if (listItems.length === 0) {
+            headerLines.push(line);
+        }
+    }
+
+    return [...headerLines, ...listItems.slice(0, count)].join('\n');
+}
+
+/**
  * Validate and format the parsed result
  * @param parsed - Parsed object from AI response
  * @returns Validated and formatted analysis result
@@ -409,6 +441,11 @@ export function validateAndFormatResult(parsed: any): AnalysisResult {
     try {
         // Use Zod validator for strict type checking
         const validated = validateAnalysisResult(parsed);
+
+        // Post-processing to enforce "exactly 3" if the AI failed to follow instructions
+        validated.steps = truncateMarkdownList(validated.steps, 3);
+        validated.interviewQuestions = truncateMarkdownList(validated.interviewQuestions, 3);
+
         return validated;
     } catch (error) {
         if (error instanceof ZodError) {
@@ -436,6 +473,12 @@ export function validateAndFormatResult(parsed: any): AnalysisResult {
             throw new ValidationError('Missing or invalid "interviewQuestions" field');
         }
 
-        throw error;
+        const result: AnalysisResult = {
+            missingSkills: parsed.missingSkills,
+            steps: truncateMarkdownList(parsed.steps, 3),
+            interviewQuestions: truncateMarkdownList(parsed.interviewQuestions, 3)
+        };
+
+        return result;
     }
 }

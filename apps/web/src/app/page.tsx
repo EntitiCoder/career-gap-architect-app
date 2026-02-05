@@ -256,14 +256,12 @@ export default function Home() {
                         </div>
 
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Action Plan</h2>
                             <div className="prose max-w-none text-gray-700">
                                 {renderMarkdown(result.steps)}
                             </div>
                         </div>
 
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Interview Preparation</h2>
                             <div className="prose max-w-none text-gray-700">
                                 {renderMarkdown(result.interviewQuestions)}
                             </div>
