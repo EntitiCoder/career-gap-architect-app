@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import HistorySidebar from '../components/HistorySidebar'
+
 interface GapAnalysisResult {
     missingSkills: string[]
     steps: string
@@ -17,6 +19,13 @@ export default function Home() {
     const [loading, setLoading] = useState(false)
     const [uploadingResume, setUploadingResume] = useState(false)
     const [uploadingJD, setUploadingJD] = useState(false)
+
+    const handleHistorySelect = (item: any) => {
+        setResume(item.resume_preview + (item.resume_preview.length >= 200 ? '...' : ''))
+        setJobDescription(item.jd_preview + (item.jd_preview.length >= 200 ? '...' : ''))
+        setResult(item.result_json)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -122,6 +131,10 @@ export default function Home() {
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+            <HistorySidebar
+                apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}
+                onSelect={handleHistorySelect}
+            />
             <div className="max-w-6xl mx-auto py-8">
                 <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center">
                     Career Gap Architect

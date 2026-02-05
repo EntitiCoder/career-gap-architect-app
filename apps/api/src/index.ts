@@ -419,6 +419,44 @@ app.post('/api/gap-analysis', inputValidatorMiddleware, async (req: Request, res
 	}
 });
 
+// History endpoint
+app.get('/api/history', async (req: Request, res: Response) => {
+	const context = requestContextMap.get(req);
+	const requestId = context?.requestId || 'unknown';
+
+	try {
+		logRequest('GET', '/api/history', { requestId });
+
+		const result = await pool.query(
+			`SELECT 
+                id, 
+                created_at, 
+                LEFT(resume_text, 200) as resume_preview,
+                LEFT(job_description, 200) as jd_preview,
+                result_json 
+             FROM gap_analyses 
+             ORDER BY created_at DESC 
+             LIMIT 10`
+		);
+
+		logger.info('History fetched successfully', {
+			requestId,
+			count: result.rows.length
+		});
+
+		res.json(result.rows);
+	} catch (error) {
+		logger.error('Failed to fetch history', {
+			requestId,
+			error: error instanceof Error ? error.message : 'Unknown error'
+		});
+		res.status(500).json({
+			error: 'Failed to fetch history',
+			details: error instanceof Error ? error.message : 'Unknown error'
+		});
+	}
+});
+
 // Start server
 app.listen(port, () => {
 	logger.info(`API server starting`, {

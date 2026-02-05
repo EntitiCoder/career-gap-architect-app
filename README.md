@@ -44,6 +44,7 @@ An AI-powered application to analyze gaps between your resume and a job descript
 - **File Upload Support**: Upload resumes and job descriptions in PDF, DOCX, or TXT formats
 - **Comprehensive Error Handling**: Detailed error messages and validation
 - **Health Monitoring**: Built-in health check endpoints for all services
+- **History & Recall**: View and recall past 10 analyses from the sidebar
 
 ## Tech Stack
 
@@ -93,6 +94,9 @@ An AI-powered application to analyze gaps between your resume and a job descript
 - `GET /health` - API server health status
 - `GET /db-health` - PostgreSQL connection status
 - `GET /redis-health` - Redis connection status
+
+**History:**
+- `GET /api/history` - Retrieve last 10 gap analyses
 
 **Analysis:**
 - `POST /api/gap-analysis` - Analyze resume vs job description
