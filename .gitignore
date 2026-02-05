@@ -18,6 +18,14 @@ dist
 .DS_Store
 *.pem
 
+# database
+dump_*.sql
+**/backup*.sql
+
+# environment
+.env.local
+.env.*.local
+
 # debug
 npm-debug.log*
 yarn-debug.log*
