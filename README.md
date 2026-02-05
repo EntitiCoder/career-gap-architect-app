@@ -34,11 +34,12 @@ Access at http://localhost:3000
 - Interview questions
 - Cache for identical inputs
 - Error handling
+- Redis-based distributed rate limiting
 
 ## Tech Stack
 
 Frontend: Next.js 14, React 18, TypeScript, Tailwind
-Backend: Express, TypeScript, PostgreSQL
+Backend: Express, TypeScript, PostgreSQL, Redis
 DevOps: Docker, Docker Compose
 
 ## Available Scripts
@@ -57,6 +58,7 @@ Individual apps:
 - Web: http://localhost:3000
 - API: http://localhost:4000
 - Endpoint: POST /api/gap-analysis
+- Health checks: GET /health, /db-health, /redis-health
 
 ## Database
 
@@ -69,6 +71,13 @@ Connect:
 ```bash
 docker exec -it career-gap-postgres psql -U postgres -d career_gap_db
 ```
+
+## Redis
+
+Rate limiting backed by Redis 7:
+- Port: 6379
+- Persistence: AOF enabled
+- Rate limit: 60 requests per minute per IP
 
 ## License
 

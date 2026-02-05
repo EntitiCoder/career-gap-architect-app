@@ -19,6 +19,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: career-gap-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes
+
   api:
     build:
       context: ./apps/api
@@ -31,11 +45,15 @@ services:
       DB_NAME: ${DB_NAME:-career_gap_db}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     ports:
       - "4000:4000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/src:/app/src
@@ -60,3 +78,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
