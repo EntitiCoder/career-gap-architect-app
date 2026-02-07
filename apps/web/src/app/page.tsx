@@ -44,7 +44,11 @@ export default function Home() {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to analyze gap')
+                if (data.validationErrors && Array.isArray(data.validationErrors)) {
+                    // Combine multiple validation errors into a single string with line breaks
+                    throw new Error(data.validationErrors.join('\n'))
+                }
+                throw new Error('Failed to analyze gap')
             }
 
             setResult(data)
@@ -241,8 +245,17 @@ export default function Home() {
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                        <h3 className="font-semibold text-red-900 mb-1">Error</h3>
-                        <p className="text-red-700">{error}</p>
+                        <h3 className="font-semibold text-red-900 mb-2">Validation Error</h3>
+                        <div className="space-y-1">
+                            {error.split('\n').map((err, i) => (
+                                <div key={i} className="flex items-start gap-2 text-red-700">
+                                    <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>{err}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

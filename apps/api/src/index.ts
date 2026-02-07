@@ -173,6 +173,16 @@ app.post('/api/gap-analysis', inputValidatorMiddleware, async (req: Request, res
 
 		const { resume, jobDescription } = validatedRequest;
 
+		// DEBUG LOG: Verify sanitization
+		if (req.body.resume.includes('<script>')) {
+			logger.info('[DEBUG] XSS Sanitization triggered', {
+				requestId,
+				before: req.body.resume.substring(0, 50) + '...',
+				after: resume.substring(0, 50) + '...',
+				wasCleaned: req.body.resume !== resume
+			});
+		}
+
 		if (!process.env.OPENROUTER_API_KEY) {
 			logger.error('OPENROUTER_API_KEY not configured', { requestId });
 			return res.status(500).json({
